@@ -34,16 +34,36 @@ int main(int argc, char* argv[])
 
 void mgit_init()
 {
-    // TODO: Safely initialize the repository structure.
-    // HINT: Check if ".mgit" already exists using stat(). If it does, do NOTHING
-    // to prevent accidental data destruction.
+    struct stat st = {0};
 
-    // TODO: Create the following directories with 0755 permissions:
-    // 1. ".mgit"
-    // 2. ".mgit/snapshots"
+    if (stat(".mgit", &st) == 0) {
+        return;
+    }
 
-    // TODO: Create the vault file ".mgit/data.bin".
-    // HINT: Open with O_CREAT | O_WRONLY and 0644 permissions. Do NOT use O_TRUNC!
+    if (mkdir(".mgit", 0755) == -1) {
+        perror("Error creating .mgit");
+        return;
+    }
+    if (mkdir(".mgit/snapshots", 0755) == -1) {
+        perror("Error creating .mgit/snapshots");
+        return;
+    }
 
-    // TODO: Create ".mgit/HEAD" and write "0" into it to initialize the snapshot counter.
+    int vault_fd = open(".mgit/data.bin", O_WRONLY | O_CREAT, 0644);
+    if (vault_fd == -1) {
+        perror("Error creating .mgit/data.bin");
+        return;
+    }
+    close(vault_fd);
+
+    int head_fd = open(".mgit/HEAD", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (head_fd == -1) {
+        perror("Error creating .mgit/HEAD");
+        return;
+    }
+    
+    if (write(head_fd, "0", 1) == -1) {
+        perror("Error initializing HEAD counter");
+    }
+    close(head_fd);
 }
