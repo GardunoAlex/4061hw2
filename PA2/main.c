@@ -56,14 +56,6 @@ void mgit_init()
     }
     close(vault_fd);
 
-    int head_fd = open(".mgit/HEAD", O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if (head_fd == -1) {
-        perror("Error creating .mgit/HEAD");
-        return;
-    }
+    update_head(0);
     
-    if (write(head_fd, "0", 1) == -1) {
-        perror("Error initializing HEAD counter");
-    }
-    close(head_fd);
 }

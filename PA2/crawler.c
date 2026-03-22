@@ -27,8 +27,11 @@ void compute_hash(const char* path, uint8_t* output)
 // Check if file matches previous snapshot (Quick Check)
 FileEntry* find_in_prev(FileEntry* prev, const char* path)
 {
-    // TODO: Iterate through the 'prev' linked list.
-    // Return the FileEntry if its path matches the requested path, otherwise return NULL.
+    while (prev) {
+        if (strcmp(prev->path, path))
+            return prev;
+        prev = prev->next;
+    }
     return NULL;
 }
 
@@ -71,6 +74,25 @@ FileEntry* build_file_list_bfs(const char* root, FileEntry* prev_snap_files)
 
 void free_file_list(FileEntry* head)
 {
-    // TODO: Iterate through the linked list and free() each node,
-    // including the dynamically allocated 'chunks' array within each node.
+    FileEntry* cur = head;
+
+    while (cur) {
+        FileEntry* next = cur->next;
+
+        if (cur->chunks) {
+            free(cur->chunks);
+        }
+
+        free(cur);
+        cur = next;
+    }
+}
+
+void free_snapshot(Snapshot* snap) {
+    if (!snap) return;
+
+    FileEntry* cur = snap->files;
+    free_file_list(cur);
+
+    free(snap);
 }

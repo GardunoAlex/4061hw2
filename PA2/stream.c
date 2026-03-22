@@ -138,7 +138,7 @@ void mgit_show(const char* id_str)
     // Logic for loading a specific snapshot vs. a live view
     if (id_str) {
         /* 1. Convert id_str to an integer and load the snapshot */
-        snap = ____________________________________________;
+        snap = load_snapshot_from_disk(atoi(id_str));
 
         if (!snap) {
             fprintf(stderr, "Error: Snapshot not found.\n");
@@ -147,24 +147,27 @@ void mgit_show(const char* id_str)
         printf("SNAPSHOT %d: %s\n", snap->snapshot_id, snap->message);
     } else {
         /* 2. Initialize a new snapshot structure for the live view */
-        snap = ____________________________________________;
+        snap = calloc(1, sizeof(Snapshot));
 
         /* 3. Populate the file list using a BFS traversal starting at "." */
-        snap->files = _____________________________________;
+        uint32_t head = get_current_head();
+        Snapshot* prev = load_snapshot_from_disk(head);
+        snap->files = build_file_list_bfs(".", prev->files);
 
         printf("LIVE VIEW\n");
+
+        free_snapshot(prev);
     }
 
     /* 4. Traverse and print the file list */
-    FileEntry* c = ____________;
-    while (____) {
+    FileEntry* c = snap->files;
+    while (c) {
         printf("%s %s\n", c->is_directory ? "DIR " : "FILE", c->path);
 
         /* 5. Move to the next entry */
-        c = ____________;
+        c = c->next;
     }
 
     /* 6. Clean up resources to prevent memory leaks */
-    ____________________________________;
-    ____________________________________;
+    free_snapshot(snap);
 }
