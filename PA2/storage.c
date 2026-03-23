@@ -316,16 +316,16 @@ void mgit_snapshot(const char *msg) {
     if (dir) {
         struct dirent *entry;
         int snap_count = 0;
-        uint32_t oldest_id = -1;
-        char oldest_filename[512] = {0};
+        uint32_t target_id = -1;
+        char target_name[512] = {0};
 
         while ((entry = readdir(dir)) != NULL) {
             uint32_t id;
             if (sscanf(entry->d_name, "snap_%u.bin", &id) == 1) {
                 snap_count++;
-                if (id < oldest_id || id < 0) {
-                    oldest_id = id;
-                    strncpy(oldest_filename, entry->d_name, sizeof(oldest_filename) - 1);
+                if (id < target_id || id < 0) {
+                    target_id = id;
+                    strncpy(target_name, entry->d_name, sizeof(target_name) - 1);
                 }
             }
         }
@@ -333,10 +333,10 @@ void mgit_snapshot(const char *msg) {
         closedir(dir);
 
         if (snap_count > 5) {
-            chunks_recycle(oldest_id);
+            chunks_recycle(target_id);
 
-            char full_path[1024];
-            snprintf(full_path, sizeof(full_path), "%s/%s", snap_dir, oldest_filename);
+            char full_path[4352];
+            snprintf(full_path, sizeof(full_path), "%s/%s", snap_dir, target_name);
             if (remove(full_path) != 0) {
                 perror("Failed to remove oldest snapshot file");
             }

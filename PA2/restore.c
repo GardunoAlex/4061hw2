@@ -76,19 +76,7 @@ void mgit_restore(const char *id_str) {
     free_file_list(reversed);
 
     // --- PHASE 2: RECONSTRUCTION & INTEGRITY ---
-    // TODO: Iterate through target_snap->files.
 
-    // HINT:
-    // 1. If it's a directory (and not "."), recreate it using mkdir() with 0755.
-    // 2. If it's a file, open it for writing ("wb").
-    // 3. For each block in curr->chunks, call read_blob_from_vault() to write the data back to
-    // disk.
-
-    // --- INTEGRITY CHECK (Corruption Detection) ---
-    // TODO: After writing a file, compute its hash using your compute_hash() function.
-    // Compare the newly computed hash with the curr->checksum stored in the snapshot.
-    // If they do not match (memcmp), print a corruption error, unlink() the bad file,
-    // and exit(1) to abort the restore.
 
     FileEntry *target_cur = target_snap->files;
 
@@ -98,6 +86,10 @@ void mgit_restore(const char *id_str) {
             continue;
         }
 
+        // 1. If it's a directory (and not "."), recreate it using mkdir() with 0755.
+        // 2. If it's a file, open it for writing ("wb").
+        // 3. For each block in curr->chunks, call read_blob_from_vault() to write the data back to
+        // disk.
         if (target_cur->is_directory) {
             if (mkdir(target_cur->path, 0755) != 0) {
                 if (errno != EEXIST)
@@ -117,6 +109,12 @@ void mgit_restore(const char *id_str) {
             }
             fclose(dest);
 
+            // --- INTEGRITY CHECK (Corruption Detection) ---
+            // Compare the newly computed hash with the curr->checksum stored in the snapshot.
+            // If they do not match (memcmp), print a corruption error, unlink() the bad file,
+            // and exit(1) to abort the restore.
+
+            
             uint8_t restored_hash[32];
             compute_hash(target_cur->path, restored_hash);
 
