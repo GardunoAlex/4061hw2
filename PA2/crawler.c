@@ -84,7 +84,7 @@ FileEntry* build_file_list_bfs(const char* root, FileEntry* prev_snap_files)
 
     // TODO: 1. Initialize the Root directory "." and add it to your BFS queue/list.
     FileEntry* root_n = calloc(1, sizeof(FileEntry));
-    strcpy(root_n->path, ".");
+    strcpy(root_n->path, root);
     root_n->is_directory = 1;
 
     head = root_n;

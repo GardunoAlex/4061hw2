@@ -2,6 +2,7 @@
 #define MGIT_H
 
 #include <arpa/inet.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -56,6 +57,7 @@ void mgit_restore(const char* id_str); // NEW: Restore Command
 // Crawler
 FileEntry* build_file_list_bfs(const char* root, FileEntry* prev_snap_files);
 void free_file_list(FileEntry* head);
+void free_snapshot(Snapshot* snap);
 void compute_hash(const char* path, uint8_t* output); // Exposed for Integrity Check
 
 // Storage

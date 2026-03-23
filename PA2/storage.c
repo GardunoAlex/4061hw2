@@ -242,20 +242,82 @@ void chunks_recycle(uint32_t target_id)
 
 }
 
+FileEntry* find_written_inode(FileEntry* head, FileEntry* current) {
+    FileEntry* scanner = head;
+    while (scanner != current) {
+        if (scanner->inode == current->inode && scanner->chunks[0].physical_offset != 0) {
+            return scanner;
+        }
+        scanner = scanner->next;
+    }
+    return NULL;
+}
+
 
 void mgit_snapshot(const char* msg)
 {
-    // TODO: 1. Get current HEAD ID and calculate next_id. Load previous files for crawling.
-    // TODO: 2. Call build_file_list_bfs() to get the new directory state.
+    int cur_head = get_current_head();
+    int next_id = cur_head + 1;
+    Snapshot* new_s = calloc(1, sizeof(Snapshot));
 
-    // TODO: 3. Iterate through the new file list.
+    if (!new_s) {
+        perror("calloc failed for Snapshot");
+        return;
+    }
+
+    new_s->snapshot_id = next_id;
+    if (msg) {
+        strncpy(new_s->message, msg, sizeof(new_s->message) - 1);
+    }
+
+    uint32_t count = 0;
+
+
+    FileEntry* new_d = build_file_list_bfs(".", load_snapshot_from_disk(cur_head));
+
+
     // - If a file has data (chunks) but its size is 0, it needs to be written to the vault.
     // - CRITICAL: Check for Hard Links! If another file in the *current* list with the same
     //   inode was already written to the vault, copy its offset and size. DO NOT write twice!
     // - Call write_blob_to_vault() for new files.
+    FileEntry* cur = new_d;
+    while (cur) {
+        count++;
+        if(!cur->is_directory && cur->chunks != NULL) {
+            if (!cur->chunks[0].physical_offset == 0) {
 
-    // TODO: 4. Call store_snapshot_to_disk() and update_head().
-    // TODO: 5. Free memory.
+                FileEntry* found = find_written_inode(new_d, cur);
+
+                if (found) {
+                    cur->num_blocks = found->num_blocks;
+                    memcpy(cur->checksum, found->checksum, 32);
+
+                    if (cur->chunks) free(cur->chunks);
+
+                    cur->chunks = malloc(sizeof(BlockTable) * found->num_blocks);
+                    
+                    if (cur->chunks) 
+                        memcpy(cur->chunks, found->chunks, 
+                            sizeof(BlockTable) * found->num_blocks);
+                } else {
+                    write_blob_to_vault(cur->path, cur->chunks);
+                }
+
+
+            }
+        }
+        cur = cur->next;
+    }
+
+    new_s->file_count = count;
+    new_s->files = new_d;
+    store_snapshot_to_disk(new_s);
+    update_head(next_id);
+
+
+    free_snapshot(new_s);
+
+
     // TODO: 6. Enforce MAX_SNAPSHOT_HISTORY (5). If exceeded, call chunks_recycle()
     //          and delete the oldest manifest file using remove().
 }
