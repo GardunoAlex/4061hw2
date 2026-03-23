@@ -1,6 +1,5 @@
 CC = gcc
 CFLAGS = -Wall -Werror -g
-LDFLAGS = -lzstd
 
 # List all your source files here
 SRCS = main.c crawler.c storage.c stream.c restore.c
