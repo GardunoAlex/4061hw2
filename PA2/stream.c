@@ -39,12 +39,12 @@ ssize_t write_all(int fd, const void *buf, size_t count) {
 // --- Serialization Helper (Untouched) ---
 void *serialize_snapshot(Snapshot *snap, size_t *out_len) {
     size_t total_size = sizeof(uint32_t) * 2 + 256;
-    FileEntry *curr = snap->files;
-    while (curr) {
+    FileEntry *cur = snap->files;
+    while (cur) {
         total_size += (sizeof(FileEntry) - sizeof(void *) * 2);
-        if (curr->num_blocks > 0)
-            total_size += (sizeof(BlockTable) * curr->num_blocks);
-        curr = curr->next;
+        if (cur->num_blocks > 0)
+            total_size += (sizeof(BlockTable) * cur->num_blocks);
+        cur = cur->next;
     }
 
     void *buf = malloc(total_size);
@@ -57,17 +57,17 @@ void *serialize_snapshot(Snapshot *snap, size_t *out_len) {
     memcpy(ptr, snap->message, 256);
     ptr += 256;
 
-    curr = snap->files;
-    while (curr) {
+    cur = snap->files;
+    while (cur) {
         size_t fixed_size = sizeof(FileEntry) - sizeof(void *) * 2;
-        memcpy(ptr, curr, fixed_size);
+        memcpy(ptr, cur, fixed_size);
         ptr += fixed_size;
-        if (curr->num_blocks > 0) {
-            size_t blocks_size = sizeof(BlockTable) * curr->num_blocks;
-            memcpy(ptr, curr->chunks, blocks_size);
+        if (cur->num_blocks > 0) {
+            size_t blocks_size = sizeof(BlockTable) * cur->num_blocks;
+            memcpy(ptr, cur->chunks, blocks_size);
             ptr += blocks_size;
         }
-        curr = curr->next;
+        cur = cur->next;
     }
 
     *out_len = total_size;
@@ -198,19 +198,19 @@ void mgit_receive(const char *dest_path) {
     if (!vault)
         exit(1);
 
-    FileEntry *curr = snap->files;
-    while (curr) {
-        if (curr->is_directory) {
-            mkdir(curr->path, 0755);
-        } else if (curr->num_blocks > 0) {
-            for (int i = 0; i < curr->num_blocks; i++) {
-                curr->chunks[i].physical_offset = ftell(vault);
+    FileEntry *cur = snap->files;
+    while (cur) {
+        if (cur->is_directory) {
+            mkdir(cur->path, 0755);
+        } else if (cur->num_blocks > 0) {
+            for (int i = 0; i < cur->num_blocks; i++) {
+                cur->chunks[i].physical_offset = ftell(vault);
 
-                char *chunk_data = malloc(curr->chunks[i].compressed_size);
+                char *chunk_data = malloc(cur->chunks[i].compressed_size);
 
-                if (read_all(STDIN_FILENO, chunk_data, curr->chunks[i].compressed_size) ==
-                    curr->chunks[i].compressed_size) {
-                    fwrite(chunk_data, 1, curr->chunks[i].compressed_size, vault);
+                if (read_all(STDIN_FILENO, chunk_data, cur->chunks[i].compressed_size) ==
+                    cur->chunks[i].compressed_size) {
+                    fwrite(chunk_data, 1, cur->chunks[i].compressed_size, vault);
                 } else {
                     free(chunk_data);
                     exit(1);
@@ -218,7 +218,7 @@ void mgit_receive(const char *dest_path) {
                 free(chunk_data);
             }
         }
-        curr = curr->next;
+        cur = cur->next;
     }
 
     // 5. Cleanup
